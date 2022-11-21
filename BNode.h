@@ -39,6 +39,10 @@ class BNode {
         return keys[index];
     }
 
+    void set_key(int index, int key) {
+        keys[index] = key;
+    }
+
     int get_size() {
         return size;
     }
@@ -82,6 +86,56 @@ class BNode {
             }
         }
         return size;
+    }
+
+    int search_key(int key) {
+        for(int i = 0; i < size; i++) {
+            if(keys[i] == key) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    BNode *get_left_sibling() {
+        int index = -1;
+        for(int i = 0; i < parent->size + 1; i++) {
+            if(parent->children[i] == this) {
+                index = i;
+                break;
+            }
+        }
+        if(index == 0) {
+            return nullptr;
+        }
+        return parent->children[index - 1];
+    }
+
+    BNode *get_right_sibling() {
+        int index = -1;
+        for(int i = 0; i < parent->size + 1; i++) {
+            if(parent->children[i] == this) {
+                index = i;
+                break;
+            }
+        }
+        if(index == size) {
+            return nullptr;
+        }
+        return parent->children[index + 1];
+    }
+
+    bool has_minimum() {
+        return size >= (n/2);
+    }
+
+    void remove_key(int index) {
+        for(int i = index; i < size - 1; i++) {
+            keys[i] = keys[i + 1];
+            children[i] = children[i + 1];
+        }
+        children[size - 1] = children[size];
+        size--;
     }
 
     BNode *split_node() {

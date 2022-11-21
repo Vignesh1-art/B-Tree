@@ -10,6 +10,14 @@ class BTree {
         root = nullptr;
     }
 
+    int get_min_key(BNode *child) {
+        BNode *curr = child;
+        while (!curr->is_leaf()) {
+            curr = curr->get_child(0);
+        }
+        return curr->get_key(0);
+    }
+
     BNode *get_root_node() {
         return root;
     }
@@ -43,6 +51,20 @@ class BTree {
         return curr;
     }
 
+    void search_key(int key, BNode **node, BNode **index_node) {
+        BNode *curr = root;
+        *index_node = nullptr;
+        *node = nullptr;
+        while (!curr->is_leaf()) {
+            int index = curr->search_greater_key(key);
+            if(curr->get_key(index) == key) {
+                *index_node = curr;
+            }
+            curr = curr->get_child(index);
+        }
+        *node = curr;
+    }
+
     void insert_key(int key) {
         if(root == nullptr) {
             root = new BNode(n,true);
@@ -71,6 +93,19 @@ class BTree {
             }
             curr_node = parent;
         }
+    }
+
+    void delete_key(int key) {
+        if(root == nullptr) {
+            return;
+        }
+        BNode *node, *index_node;
+        search_key(key,&node,&index_node);
+        if(node == nullptr) {
+            cout<<"Key not found"<<endl;
+            return;
+        }
+
     }
 
 };
