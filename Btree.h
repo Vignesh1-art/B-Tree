@@ -106,6 +106,38 @@ class BTree {
             return;
         }
 
+        {
+            int index = node->search_key(key);
+            node->remove_key(index);
+        }
+
+        BNode *curr_node = node;
+        while (curr_node && !curr_node->has_minimum()) {
+
+            BNode *right_sibling = curr_node->get_right_sibling();
+            BNode *left_sibling = curr_node->get_left_sibling();
+
+            if(right_sibling && right_sibling->can_borrow()) {
+                int borrow_key = right_sibling->get_key(0);
+                right_sibling->remove_key(0);
+                node->insert_key(borrow_key);
+                int index = node->get_index_at_parent();
+                BNode *parent = node->get_parent();
+                parent->set_key(index,right_sibling->get_key(0));
+            } else if(left_sibling && left_sibling->can_borrow()) {
+                int last_index = left_sibling->get_size() - 1;
+                int borrow_key = left_sibling->get_key(last_index);
+                left_sibling->remove_key(last_index);
+                last_index--;
+                node->insert_key(borrow_key);
+                int index = node->get_index_at_parent();
+                BNode *parent = node->get_parent();
+                parent->set_key(index - 1, left_sibling->get_key(last_index));
+            }
+
+            curr_node = curr_node->get_parent();
+        }
+        
     }
 
 };

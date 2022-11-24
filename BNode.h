@@ -81,7 +81,7 @@ class BNode {
 
     int search_greater_key(int key) {
         for(int i = 0; i < size; i++) {
-            if(keys[i] >= key) {
+            if(keys[i] > key) {
                 return i;
             }
         }
@@ -98,6 +98,9 @@ class BNode {
     }
 
     BNode *get_left_sibling() {
+        if(parent == nullptr) {
+            return nullptr;
+        }
         int index = -1;
         for(int i = 0; i < parent->size + 1; i++) {
             if(parent->children[i] == this) {
@@ -112,6 +115,9 @@ class BNode {
     }
 
     BNode *get_right_sibling() {
+        if(parent == nullptr) {
+            return nullptr;
+        }
         int index = -1;
         for(int i = 0; i < parent->size + 1; i++) {
             if(parent->children[i] == this) {
@@ -119,10 +125,14 @@ class BNode {
                 break;
             }
         }
-        if(index == size) {
+        if(index == parent->size + 1) {
             return nullptr;
         }
         return parent->children[index + 1];
+    }
+
+    bool can_borrow() {
+        return size > (n/2);
     }
 
     bool has_minimum() {
@@ -151,6 +161,30 @@ class BNode {
         other_node->set_child(other_node->size,children[size]);
         size = mid_index;
         return other_node;
+    }
+
+    void merge_node(BNode *node) {
+        if(node == nullptr) {
+            return;
+        }
+        int offset = node->size;
+        for(int i = 0; i < node->size; i++) {
+            keys[offset + i] = node->keys[i];
+            children[offset + i] = node->children[i];
+            size++;
+        }
+        children[size] = node->children[node->size];
+        delete node;
+    }
+
+    int get_index_at_parent() {
+
+        for (int i = 0; i <= parent->size; i++) {
+            if(parent->children[i] == this) {
+                return i;
+            }
+        }
+        return -1;
     }
 };
 
