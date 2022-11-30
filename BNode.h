@@ -23,6 +23,10 @@ class BNode {
         parent = nullptr;
     }
 
+    void clear_parent() {
+        parent = nullptr;
+    }
+
     bool is_full() {
         return size == n;
     }
@@ -125,7 +129,7 @@ class BNode {
                 break;
             }
         }
-        if(index == parent->size + 1) {
+        if(index == parent->size) {
             return nullptr;
         }
         return parent->children[index + 1];
@@ -167,13 +171,13 @@ class BNode {
         if(node == nullptr) {
             return;
         }
-        int offset = node->size;
+        int offset = size;
         for(int i = 0; i < node->size; i++) {
             keys[offset + i] = node->keys[i];
-            children[offset + i] = node->children[i];
+            set_child(offset + i,node->children[i]);
             size++;
         }
-        children[size] = node->children[node->size];
+        set_child(size,node->children[node->size]);
         delete node;
     }
 
@@ -186,6 +190,7 @@ class BNode {
         }
         return -1;
     }
+
 };
 
 #endif

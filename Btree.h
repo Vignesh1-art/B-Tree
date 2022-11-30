@@ -51,13 +51,21 @@ class BTree {
         return curr;
     }
 
+    int find_max_key(BNode *node) {
+        BNode *curr = node;
+        while (!curr->is_leaf()) {
+            curr = curr->get_child(curr->get_size());
+        }
+        return curr->get_key(curr->get_size() - 1);
+    }
+
     void search_key(int key, BNode **node, BNode **index_node) {
         BNode *curr = root;
         *index_node = nullptr;
         *node = nullptr;
         while (!curr->is_leaf()) {
             int index = curr->search_greater_key(key);
-            if(curr->get_key(index) == key) {
+            if(curr->get_key(index - 1) == key) {
                 *index_node = curr;
             }
             curr = curr->get_child(index);
@@ -108,6 +116,9 @@ class BTree {
 
         {
             int index = node->search_key(key);
+            if(index == -1) {
+                return;
+            }
             node->remove_key(index);
         }
 
@@ -133,11 +144,51 @@ class BTree {
                 int index = node->get_index_at_parent();
                 BNode *parent = node->get_parent();
                 parent->set_key(index - 1, left_sibling->get_key(last_index));
+            } else {
+                BNode *merge_node = curr_node->get_left_sibling();
+                int parent_index = curr_node->get_index_at_parent() - 1;
+                bool is_left = true;
+                if(merge_node == nullptr) {
+                    merge_node = curr_node->get_right_sibling();
+                    parent_index++;
+                    is_left = false;
+                }
+                BNode *parent = curr_node->get_parent();
+                if(curr_node->is_leaf()) {
+                    curr_node->merge_node(merge_node);
+                    parent->remove_key(parent_index);
+                    parent->set_child(parent_index,curr_node);
+                } else {
+                    int parent_key = parent->get_key(parent_index);
+                    parent->remove_key(parent_index);
+                    if(is_left) {
+                        merge_node->insert_key(parent_key);
+                        merge_node->merge_node(curr_node);
+                        curr_node = merge_node;
+                    } else {
+                        curr_node->insert_key(parent_key);
+                        curr_node->merge_node(merge_node);
+                    }
+                    parent->set_child(parent_index,curr_node);
+                }
+                if(parent->get_size() == 0 && parent == root) {
+                    delete parent;
+                    curr_node->clear_parent();
+                    root = curr_node;
+                }
             }
 
             curr_node = curr_node->get_parent();
         }
-        
+
+        if(index_node) {
+            int index = index_node->search_key(key);
+            if(index == -1) {
+                return;
+            }
+            int key = find_max_key(index_node->get_child(index + 1));
+            index_node->set_key(index,key);
+        }
     }
 
 };
