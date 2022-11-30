@@ -23,6 +23,10 @@ class BTree {
     }
 
     void print() {
+        if(root == nullptr) {
+            cout<<"Tree Empty"<<endl;
+            return;
+        }
         queue<BNode*> queue;
         queue.push(root);
         while(!queue.empty()) {
@@ -120,6 +124,11 @@ class BTree {
                 return;
             }
             node->remove_key(index);
+            if(node->get_size() == 0 && node == root) {
+                delete node;
+                root = nullptr;
+                return;
+            }
         }
 
         BNode *curr_node = node;
