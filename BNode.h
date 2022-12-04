@@ -67,12 +67,27 @@ class BNode {
             return -1;
         }
         int i;
+        children[size + 1] = children[size];
         for(i = size; i > 0 && keys[i - 1] > key; i--) {
             keys[i] = keys[i - 1];
+            children[i] = children[i - 1];
         }
         keys[i] = key;
         size++;
         return i;
+    }
+
+    void insert_key(int index,int key) {
+        if(size == n) {
+            return;
+        }
+        children[size + 1] = children[size];
+        for(int i = size; i > index; i--) {
+            keys[i] = keys[i - 1];
+            children[i] = children[i - 1];
+        }
+        keys[index] = key;
+        size++;
     }
 
     void print_keys() {
@@ -85,11 +100,11 @@ class BNode {
 
     int search_greater_key(int key) {
         for(int i = 0; i < size; i++) {
-            if(keys[i] > key) {
+            if(keys[i] >= key) {
                 return i;
             }
         }
-        return size;
+        return size - 1;
     }
 
     int search_key(int key) {
@@ -148,7 +163,9 @@ class BNode {
             keys[i] = keys[i + 1];
             children[i] = children[i + 1];
         }
-        children[size - 1] = children[size];
+        if(index != size - 1) {
+            children[size - 1] = children[size];
+        }
         size--;
     }
 
@@ -182,7 +199,9 @@ class BNode {
     }
 
     int get_index_at_parent() {
-
+        if(parent == nullptr) {
+            return -1;
+        }
         for (int i = 0; i <= parent->size; i++) {
             if(parent->children[i] == this) {
                 return i;

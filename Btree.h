@@ -35,6 +35,9 @@ class BTree {
                 BNode *curr = queue.front();
                 curr->print_keys();
                 queue.pop();
+                if(curr->is_leaf()) {
+                    continue;
+                }
                 for(int j = 0; j <= curr->get_size(); j++) {
                     BNode *t = curr->get_child(j);
                     if(t) {
@@ -50,7 +53,11 @@ class BTree {
         BNode *curr = root;
         while (!curr->is_leaf()) {
             int index = curr->search_greater_key(key);
-            curr = curr->get_child(index);
+            if(curr->get_key(index) <= key) {
+                curr = curr->get_child(index + 1);
+            } else {
+                curr = curr->get_child(index);
+            }
         }
         return curr;
     }
@@ -69,10 +76,14 @@ class BTree {
         *node = nullptr;
         while (!curr->is_leaf()) {
             int index = curr->search_greater_key(key);
-            if(curr->get_key(index - 1) == key) {
+            if(curr->get_key(index) == key) {
                 *index_node = curr;
             }
-            curr = curr->get_child(index);
+            if(curr->get_key(index) <= key) {
+                curr = curr->get_child(index + 1);
+            } else {
+                curr = curr->get_child(index);
+            }
         }
         *node = curr;
     }
@@ -99,7 +110,8 @@ class BTree {
                 root->set_child(0,curr_node);
                 root->set_child(1,other_node);
             } else {
-                int index = parent->insert_key(mid_key);
+                int index = curr_node->get_index_at_parent();
+                curr_node->get_parent()->insert_key(index,mid_key);
                 parent->set_child(index,curr_node);
                 parent->set_child(index + 1,other_node);
             }
@@ -109,6 +121,7 @@ class BTree {
 
     void delete_key(int key) {
         if(root == nullptr) {
+            cout<<"Tree Empty :: No keys Found"<<endl;
             return;
         }
         BNode *node, *index_node;
@@ -138,52 +151,67 @@ class BTree {
             BNode *left_sibling = curr_node->get_left_sibling();
 
             if(right_sibling && right_sibling->can_borrow()) {
-                int borrow_key = right_sibling->get_key(0);
+                int index = curr_node->get_index_at_parent();
+                BNode *parent = right_sibling->get_parent();
+                if(parent->get_key(0) == key) {
+                    int borrow_key = right_sibling->get_key(0);
+                    parent->set_key(index,borrow_key);
+                    curr_node->insert_key(curr_node->get_size(),borrow_key);
+                } else {
+                    int borrow_key = parent->get_key(index);
+                    //Set 1th key in root key because 0th key will be removed
+                    parent->set_key(index,right_sibling->get_key(1));
+                    curr_node->insert_key(curr_node->get_size(),borrow_key);
+                }
+                curr_node->set_child(curr_node->get_size(), right_sibling->get_child(0));
                 right_sibling->remove_key(0);
-                node->insert_key(borrow_key);
-                int index = node->get_index_at_parent();
-                BNode *parent = node->get_parent();
-                parent->set_key(index,right_sibling->get_key(0));
+
             } else if(left_sibling && left_sibling->can_borrow()) {
-                int last_index = left_sibling->get_size() - 1;
-                int borrow_key = left_sibling->get_key(last_index);
-                left_sibling->remove_key(last_index);
-                last_index--;
-                node->insert_key(borrow_key);
-                int index = node->get_index_at_parent();
-                BNode *parent = node->get_parent();
-                parent->set_key(index - 1, left_sibling->get_key(last_index));
+                int index = left_sibling->get_index_at_parent();
+                BNode *parent = left_sibling->get_parent();
+                if(parent->get_key(parent->get_size() - 1) == key) {
+                    int borrow_key = left_sibling->get_key(left_sibling->get_size() - 1);
+                    parent->set_key(index,borrow_key);
+                    curr_node->insert_key(0,borrow_key);
+                } else {
+                    int borrow_key = parent->get_key(index);
+                    //Set prev to last key as root key because last key will be removed
+                    int t = left_sibling->get_key(left_sibling->get_size() - 2);
+                    parent->set_key(index,t);
+                    curr_node->insert_key(0,borrow_key);
+                }
+                curr_node->set_child(0,left_sibling->get_child(left_sibling->get_size()));
+                left_sibling->remove_key(left_sibling->get_size() - 1);
+
             } else {
                 BNode *merge_node = curr_node->get_left_sibling();
                 int parent_index = curr_node->get_index_at_parent() - 1;
+                BNode *parent = curr_node->get_parent();
                 bool is_left = true;
                 if(merge_node == nullptr) {
                     merge_node = curr_node->get_right_sibling();
-                    parent_index++;
+                    parent_index = merge_node->get_index_at_parent() - 1;
                     is_left = false;
                 }
-                BNode *parent = curr_node->get_parent();
+                if(is_left) {
+                    BNode *temp = curr_node;
+                    curr_node = merge_node;
+                    merge_node = temp;
+                }
                 if(curr_node->is_leaf()) {
                     curr_node->merge_node(merge_node);
                     parent->remove_key(parent_index);
-                    parent->set_child(parent_index,curr_node);
                 } else {
                     int parent_key = parent->get_key(parent_index);
+                    curr_node->insert_key(curr_node->get_size(),parent_key);
+                    curr_node->merge_node(merge_node);
                     parent->remove_key(parent_index);
-                    if(is_left) {
-                        merge_node->insert_key(parent_key);
-                        merge_node->merge_node(curr_node);
-                        curr_node = merge_node;
-                    } else {
-                        curr_node->insert_key(parent_key);
-                        curr_node->merge_node(merge_node);
-                    }
-                    parent->set_child(parent_index,curr_node);
                 }
-                if(parent->get_size() == 0 && parent == root) {
-                    delete parent;
-                    curr_node->clear_parent();
+                parent->set_child(parent_index,curr_node);
+                if(parent == root && parent->get_size() == 0) {
                     root = curr_node;
+                    root->clear_parent();
+                    delete parent;
                 }
             }
 
