@@ -184,6 +184,9 @@ class BTree {
                 left_sibling->remove_key(left_sibling->get_size() - 1);
 
             } else {
+                if(curr_node == root) {
+                    break;
+                }
                 BNode *merge_node = curr_node->get_left_sibling();
                 int parent_index = curr_node->get_index_at_parent() - 1;
                 BNode *parent = curr_node->get_parent();
@@ -197,6 +200,9 @@ class BTree {
                     BNode *temp = curr_node;
                     curr_node = merge_node;
                     merge_node = temp;
+                }
+                if(merge_node == index_node) {
+                    index_node = nullptr;
                 }
                 if(curr_node->is_leaf()) {
                     curr_node->merge_node(merge_node);
@@ -212,6 +218,9 @@ class BTree {
                     root = curr_node;
                     root->clear_parent();
                     delete parent;
+                    if(parent == index_node) {
+                        index_node = nullptr;
+                    }
                 }
             }
 
